@@ -1,40 +1,39 @@
-# Importamos tipos para anotaciones de tipo en Python
+# Importamos lo necesario para trabajar
 from typing import List, Optional
-
-# Importamos la entidad de tarea que define nuestro dominio
 from domain.entities.task_entity import TaskEntity
-
-# Importamos la interfaz que define los métodos que debe implementar el repositorio
 from interface_adapters.repositories.i_task_repository import ITaskRepository
-
-# Importamos el modelo de Django que representa la tabla en la base de datos
 from infrastructure.django_app.models import TaskModel
 
 
-# Definimos la clase que implementa la interfaz ITaskRepository
-class TaskRepositoryDjango(ITaskRepository):
+# Esta clase es la que realmente hace el trabajo de guardar y recuperar tareas
+class TaskRepositoryDjango(ITaskRepository):  # "Firma" el contrato ITaskRepository
 
     def find_all(self) -> List[TaskEntity]:
-        # Obtiene todos los registros ordenados por fecha de creación descendente
+        # FUNCIÓN: Busca TODAS las tareas
+        # 1. Pide a Django todas las tareas ordenadas por fecha (más nuevas primero)
         task_models = TaskModel.objects.all().order_by("-created_at")
-        # Convierte cada modelo de Django en una entidad de dominio
+
+        # 2. Convierte cada tarea de "formato Django" a "formato de nuestra app"
         task_entities = [
             TaskEntity(
-                id=tm.id,
-                title=tm.title,
-                description=tm.description,
-                completed=tm.completed,
-                created_at=tm.created_at,
+                id=tm.id,  # Copia el ID
+                title=tm.title,  # Copia el título
+                description=tm.description,  # Copia la descripción
+                completed=tm.completed,  # Copia si está completada
+                created_at=tm.created_at,  # Copia la fecha de creación
             )
-            for tm in task_models
+            for tm in task_models  # Hace esto para cada tarea encontrada
         ]
+        # 3. Devuelve la lista convertida
         return task_entities
 
     def find_by_id(self, task_id: int) -> Optional[TaskEntity]:
+        # FUNCIÓN: Busca UNA tarea específica
         try:
-            # Intenta encontrar la tarea por su ID
+            # 1. Intenta encontrar la tarea con ese ID
             tm = TaskModel.objects.get(id=task_id)
-            # Si la encuentra, la convierte en una entidad
+
+            # 2. Si la encuentra, la convierte al formato de nuestra app
             return TaskEntity(
                 id=tm.id,
                 title=tm.title,
@@ -43,23 +42,25 @@ class TaskRepositoryDjango(ITaskRepository):
                 created_at=tm.created_at,
             )
         except TaskModel.DoesNotExist:
-            # Si no encuentra la tarea, devuelve None
+            # 3. Si no existe esa tarea, devuelve None (nada)
             return None
 
     def save(self, task: TaskEntity) -> TaskEntity:
+        # FUNCIÓN: Guarda una tarea (nueva o actualizada)
         if task.id:
-            # Si tiene ID, actualiza la tarea existente
-            tm = TaskModel.objects.get(id=task.id)
-            tm.title = task.title
-            tm.description = task.description
-            tm.completed = task.completed
-            tm.save()
+            # 1A. Si tiene ID, es una tarea que ya existe → ACTUALIZAR
+            tm = TaskModel.objects.get(id=task.id)  # Busca la original
+            tm.title = task.title  # Actualiza título
+            tm.description = task.description  # Actualiza descripción
+            tm.completed = task.completed  # Actualiza estado
+            tm.save()  # Guarda cambios
         else:
-            # Si no tiene ID, crea una nueva tarea
-            tm = TaskModel.objects.create(
+            # 1B. Si NO tiene ID, es una tarea nueva → CREAR
+            tm = TaskModel.objects.create(  # Crea nueva tarea
                 title=task.title, description=task.description, completed=task.completed
             )
-        # Devuelve la entidad actualizada con todos sus datos
+
+        # 2. Devuelve la tarea guardada (con ID asignado y fechas)
         return TaskEntity(
             id=tm.id,
             title=tm.title,
@@ -69,11 +70,14 @@ class TaskRepositoryDjango(ITaskRepository):
         )
 
     def delete(self, task_id: int) -> bool:
+        # FUNCIÓN: Elimina una tarea
         try:
-            # Intenta encontrar y eliminar la tarea
+            # 1. Intenta encontrar la tarea
             tm = TaskModel.objects.get(id=task_id)
+            # 2. Si existe, la elimina
             tm.delete()
+            # 3. Informa que todo salió bien
             return True
         except TaskModel.DoesNotExist:
-            # Si no existe la tarea, devuelve False
+            # 4. Si no existe, informa que no se pudo borrar
             return False

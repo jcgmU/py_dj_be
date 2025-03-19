@@ -42,9 +42,11 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "infrastructure.django_app",  # Asegúrate que este nombre sea correcto
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",  # Añadir esta línea
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -130,3 +132,17 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Configura los orígenes permitidos
+
+# Para desarrollo (permite cualquier origen):
+CORS_ALLOW_ALL_ORIGINS = True
+
+# O para ser más específico (recomendado en producción):
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",
+#     "http://127.0.0.1:3000",
+# ]
+
+# Permite enviar cookies en solicitudes CORS (si lo necesitas)
+# CORS_ALLOW_CREDENTIALS = True

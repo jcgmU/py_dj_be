@@ -33,7 +33,7 @@ class ITaskRepository(ABC):
         pass
 
     # delete elimina una tarea por su ID
-    # Retorna True si se eliminó correctamente, False si no
+    # Retorna True si se eliminó correctamente, False si no.
     @abstractmethod
     def delete(self, task_id: int) -> bool:
         pass
